@@ -1,38 +1,48 @@
-const { ThermalPrinter, PrinterTypes } = require("node-thermal-printer");
-
-function formatPrinterInterface(printerName) {
-  return `printer:${printerName}`;
-}
+const { exec } = require("child_process");
+const fs = require("fs");
+const path = require("path");
+const os = require("os");
 
 async function printEscPos(printerName, payload = {}) {
-  const printer = new ThermalPrinter({
-    type: PrinterTypes.EPSON,
-    interface: formatPrinterInterface(printerName),
-    removeSpecialCharacters: false,
-    lineCharacter: "-"
-  });
-
-  const isConnected = await printer.isPrinterConnected();
-  if (!isConnected) {
-    throw new Error(`Impressora nao encontrada ou indisponivel: ${printerName}`);
-  }
-
   const {
     text = [],
-    cut = true,
-    beep = false,
-    openCashDrawer = false
+    cut = true
   } = payload;
 
-  text.forEach((line) => printer.println(String(line)));
+  // Monta o conteúdo do cupom
+  const content = text.join("\r\n") + (cut ? "\r\n\x1B\x69" : "");
 
-  if (beep) printer.beep();
-  if (openCashDrawer) printer.openCashDrawer();
-  if (cut) printer.cut();
+  // Salva em arquivo temporário
+  const tmpFile = path.join(os.tmpdir(), `cupom_${Date.now()}.txt`);
+  fs.writeFileSync(tmpFile, content, "binary");
 
-  await printer.execute();
+  // Envia para a impressora via Windows
+  return new Promise((resolve, reject) => {
+    const cmd = `print /D:"${printerName}" "${tmpFile}"`;
+    exec(cmd, (error, stdout, stderr) => {
+      // Remove arquivo temporário
+      try { fs.unlinkSync(tmpFile); } catch {}
+      
+      if (error) {
+        reject(new Error(`Erro ao imprimir: ${error.message}`));
+      } else {
+        resolve(true);
+      }
+    });
+  });
 }
 
-module.exports = {
-  printEscPos
-};
+async function getPrinters() {
+  return new Promise((resolve) => {
+    exec(`wmic printer get name`, (error, stdout) => {
+      if (error) { resolve([]); return; }
+      const printers = stdout
+        .split("\n")
+        .map(l => l.trim())
+        .filter(l => l && l !== "Name");
+      resolve(printers);
+    });
+  });
+}
+
+module.exports = { printEscPos, getPrinters };
