@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PDV Bridge</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="hero">
+        <div class="hero-brand">
+          <div class="hero-logo" aria-hidden="true"></div>
+          <div>
+            <h1>PDV Bridge</h1>
+            <p class="hero-tagline">Impressao ESC/POS silenciosa para o seu sistema web</p>
+          </div>
+        </div>
+        <span id="versionBadge" class="badge">v…</span>
+      </header>
+
+      <main class="main">
+        <section class="panel panel--accent">
+          <div class="panel-head">
+            <span class="status-dot status-dot--live" aria-hidden="true"></span>
+            <div>
+              <h2 class="panel-title">API local</h2>
+              <p class="panel-desc">Rodando neste computador apenas (loopback)</p>
+            </div>
+          </div>
+          <code id="baseUrlDisplay" class="mono-block">http://localhost:8181</code>
+          <div class="btn-grid">
+            <button type="button" class="btn btn--ghost" id="copyBaseBtn">
+              Copiar URL
+            </button>
+            <button type="button" class="btn btn--ghost" id="openHealthBtn">
+              Abrir /health
+            </button>
+            <button type="button" class="btn btn--ghost" id="openHintsBtn">
+              Abrir /client-hints
+            </button>
+            <button type="button" class="btn btn--ghost" id="copyFetchBtn">
+              Copiar exemplo fetch
+            </button>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2 class="panel-title">Impressora</h2>
+          <label class="field-label" for="printerSelect">Impressora termica</label>
+          <div class="row">
+            <select id="printerSelect" class="select"></select>
+            <button type="button" class="btn btn--secondary" id="refreshBtn">
+              Atualizar
+            </button>
+          </div>
+          <button type="button" class="btn btn--primary" id="savePrinterBtn">
+            Salvar impressora
+          </button>
+          <button type="button" class="btn btn--outline" id="testPrintBtn">
+            Imprimir teste
+          </button>
+        </section>
+
+        <section class="panel panel--compact">
+          <label class="toggle">
+            <input type="checkbox" id="startupToggle" />
+            <span class="toggle-ui"></span>
+            <span class="toggle-text">Iniciar com Windows</span>
+          </label>
+        </section>
+
+        <section class="panel">
+          <h2 class="panel-title">Status</h2>
+          <p id="statusText" class="status-msg">Carregando…</p>
+        </section>
+
+        <details class="details">
+          <summary>Chrome e preview (Lovable / iframe)</summary>
+          <div class="details-body">
+            <p>
+              Sites em <strong>HTTPS</strong> precisam de
+              <code>targetAddressSpace: "loopback"</code> no <code>fetch</code>
+              para falar com este app. O Chrome pode pedir permissao de rede
+              local.
+            </p>
+            <p>
+              <strong>Preview dentro de iframe</strong> (ex.: Lovable) pode
+              bloquear mesmo com tudo permitido: teste em
+              <strong>aba propria</strong> do seu dominio ou em
+              <code>http://localhost</code> no dev.
+            </p>
+            <p class="details-note">
+              Seu front pode carregar dicas em JSON em
+              <code>/client-hints</code> (mesmo host e porta).
+            </p>
+          </div>
+        </details>
+      </main>
+    </div>
+
+    <script src="./renderer.js"></script>
+  </body>
+</html>

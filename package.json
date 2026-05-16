@@ -1,0 +1,63 @@
+{
+  "name": "pdv-bridge",
+  "version": "0.1.0",
+  "description": "Bridge local para impressao termica ESC/POS via HTTP.",
+  "main": "src/main/main.js",
+  "author": {
+    "name": "PDV Bridge Tecnologia"
+  },
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron .",
+    "build": "electron-builder --win --publish never"
+  },
+  "dependencies": {
+    "electron-store": "^11.0.2",
+    "express": "^5.2.1",
+    "node-thermal-printer": "^4.6.0"
+  },
+  "devDependencies": {
+    "electron": "^42.0.1",
+    "electron-builder": "^26.8.1"
+  },
+  "build": {
+    "appId": "com.pdvbridge.app",
+    "productName": "PDV Bridge",
+    "copyright": "Copyright © 2026 PDV Bridge Tecnologia",
+    "directories": {
+      "buildResources": "build"
+    },
+    "win": {
+      "signAndEditExecutable": false,
+      "icon": "build/icon.ico",
+      "verifyUpdateCodeSignature": false,
+      "executableName": "PDV Bridge",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "PDV-Bridge-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "menuCategory": true,
+      "shortcutName": "PDV Bridge",
+      "uninstallDisplayName": "${productName} ${version}"
+    },
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
+    "extraMetadata": {
+      "companyName": "PDV Bridge Tecnologia"
+    }
+  }
+}
