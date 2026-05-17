@@ -50,22 +50,12 @@ function buildApp({ getPrinters, onPrintRequest }) {
       )
     );
   });
-
   app.get("/health", (_req, res) => {
-    const hints = buildClientHints(SERVER_PORT);
     res.json({
       ok: true,
       service: "pdv-bridge",
-      version: hints.version,
-      port: SERVER_PORT,
-      urls: {
-        preferForHttpsSites: hints.recommendedBaseUrl,
-        ipv4: hints.alternateBaseUrlIpv4
-      },
-      chrome: {
-        hint: hints.fetch.targetAddressSpaceLoopback,
-        clientHintsUrl: hints.endpoints.clientHints
-      }
+      version: "0.1.0",
+      port: SERVER_PORT
     });
   });
 
