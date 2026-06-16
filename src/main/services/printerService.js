@@ -50,9 +50,32 @@ function rawPrint(printerName, buffer) {
     const script = `
 $ErrorActionPreference = 'Stop'
 $printer = '${psQuote(printerName)}'
-$path = '${psQuote(binFile)}'
-$bytes = [System.IO.File]::ReadAllBytes($path)
-$src = @"
+$binPath = '${psQuote(binFile)}'
+$bytes = [System.IO.File]::ReadAllBytes($binPath)
+
+# Tenta obter a porta fisica da impressora (ex: USB001, COM1, LPT1)
+$portName = $null
+try {
+  $portName = (Get-Printer -Name $printer -ErrorAction Stop).PortName
+} catch {}
+
+$usedPort = $false
+
+# Se for porta fisica (nao de rede), escreve direto na porta — bypassa driver
+if ($portName -and ($portName -match '^(USB|COM|LPT)')) {
+  try {
+    $portPath = '\\\\.\\\' + $portName
+    $stream = [System.IO.File]::Open($portPath, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Write, [System.IO.FileShare]::ReadWrite)
+    try { $stream.Write($bytes, 0, $bytes.Length) } finally { $stream.Close() }
+    $usedPort = $true
+  } catch {
+    $usedPort = $false
+  }
+}
+
+# Fallback: WritePrinter via winspool
+if (-not $usedPort) {
+  $src = @"
 using System;
 using System.Runtime.InteropServices;
 public class RawPrinter {
@@ -81,8 +104,9 @@ public class RawPrinter {
   }
 }
 "@
-Add-Type -TypeDefinition $src -Language CSharp
-[RawPrinter]::Send($printer, $bytes)
+  Add-Type -TypeDefinition $src -Language CSharp
+  [RawPrinter]::Send($printer, $bytes)
+}
 `;
 
     try {
