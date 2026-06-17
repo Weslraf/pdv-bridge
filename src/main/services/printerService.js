@@ -49,43 +49,44 @@ function rawPrint(printerName, buffer) {
 
     const script = `
 $ErrorActionPreference = 'Stop'
-$printer = '${psQuote(printerName)}'
-$binPath = '${psQuote(binFile)}'
-$bytes = [System.IO.File]::ReadAllBytes($binPath)
-
-# Aborta cedo se a impressora estiver marcada como OFFLINE no Windows.
-$offline = $false
 try {
-  $cim = Get-CimInstance Win32_Printer -Filter ("Name='" + ($printer -replace "'", "''") + "'") -ErrorAction Stop
-  if ($cim -and $cim.WorkOffline) { $offline = $true }
-} catch {}
-if ($offline) {
-  throw "A impressora esta OFFLINE no Windows. Verifique cabo, energia e papel, depois tente novamente."
-}
+  $printer = '${psQuote(printerName)}'
+  $binPath = '${psQuote(binFile)}'
+  $bytes = [System.IO.File]::ReadAllBytes($binPath)
 
-# Tenta obter a porta fisica da impressora (ex: USB001, COM1, LPT1)
-$portName = $null
-try {
-  $portName = (Get-Printer -Name $printer -ErrorAction Stop).PortName
-} catch {}
-
-$usedPort = $false
-
-# Se for porta fisica (nao de rede), escreve direto na porta — bypassa driver
-if ($portName -and ($portName -match '^(USB|COM|LPT)')) {
+  # Aborta cedo se a impressora estiver marcada como OFFLINE no Windows.
+  $offline = $false
   try {
-    $portPath = '\\\\.\\\' + $portName
-    $stream = [System.IO.File]::Open($portPath, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Write, [System.IO.FileShare]::ReadWrite)
-    try { $stream.Write($bytes, 0, $bytes.Length) } finally { $stream.Close() }
-    $usedPort = $true
-  } catch {
-    $usedPort = $false
+    $cim = Get-CimInstance Win32_Printer -Filter ("Name='" + ($printer -replace "'", "''") + "'") -ErrorAction Stop
+    if ($cim -and $cim.WorkOffline) { $offline = $true }
+  } catch {}
+  if ($offline) {
+    throw "Impressora desligada ou desconectada. Ligue a impressora e confira o cabo."
   }
-}
 
-# Fallback: WritePrinter via winspool
-if (-not $usedPort) {
-  $src = @"
+  # Tenta obter a porta fisica da impressora (ex: USB001, COM1, LPT1)
+  $portName = $null
+  try {
+    $portName = (Get-Printer -Name $printer -ErrorAction Stop).PortName
+  } catch {}
+
+  $usedPort = $false
+
+  # Se for porta fisica (nao de rede), escreve direto na porta -- bypassa driver
+  if ($portName -and ($portName -match '^(USB|COM|LPT)')) {
+    try {
+      $portPath = '\\\\.\\\' + $portName
+      $stream = [System.IO.File]::Open($portPath, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Write, [System.IO.FileShare]::ReadWrite)
+      try { $stream.Write($bytes, 0, $bytes.Length) } finally { $stream.Close() }
+      $usedPort = $true
+    } catch {
+      $usedPort = $false
+    }
+  }
+
+  # Fallback: WritePrinter via winspool
+  if (-not $usedPort) {
+    $src = @"
 using System;
 using System.Runtime.InteropServices;
 public class RawPrinter {
@@ -100,35 +101,46 @@ public class RawPrinter {
   [DllImport("winspool.drv", SetLastError=true)] public static extern bool WritePrinter(IntPtr h, byte[] buf, int count, out int written);
   public static void Send(string name, byte[] data) {
     IntPtr h;
-    if(!OpenPrinter(name, out h, IntPtr.Zero)) throw new Exception("OpenPrinter falhou (codigo " + Marshal.GetLastWin32Error() + "). Verifique o nome da impressora.");
+    if(!OpenPrinter(name, out h, IntPtr.Zero)) throw new Exception("Impressora nao encontrada. Selecione a impressora novamente na lista.");
     try {
-      var di = new DOCINFO(); di.pDocName = "Cupom PDV"; di.pDataType = "RAW";
-      if(!StartDocPrinter(h, 1, di)) throw new Exception("StartDocPrinter falhou (codigo " + Marshal.GetLastWin32Error() + ").");
+      var di = new DOCINFO(); di.pDocName = "Cupom"; di.pDataType = "RAW";
+      if(!StartDocPrinter(h, 1, di)) throw new Exception("Nao foi possivel iniciar a impressao. Verifique a impressora.");
       try {
         StartPagePrinter(h);
         int written;
-        if(!WritePrinter(h, data, data.Length, out written)) throw new Exception("WritePrinter falhou (codigo " + Marshal.GetLastWin32Error() + ").");
+        if(!WritePrinter(h, data, data.Length, out written)) throw new Exception("Nao foi possivel enviar o cupom. Verifique a impressora.");
         EndPagePrinter(h);
       } finally { EndDocPrinter(h); }
     } finally { ClosePrinter(h); }
   }
 }
 "@
-  Add-Type -TypeDefinition $src -Language CSharp
-  [RawPrinter]::Send($printer, $bytes)
+    Add-Type -TypeDefinition $src -Language CSharp
+    [RawPrinter]::Send($printer, $bytes)
 
-  # O WritePrinter so enfileira: confirma que o spooler nao rejeitou o cupom
-  # (papel acabou, impressora offline, driver recusou etc.).
-  Start-Sleep -Milliseconds 400
-  for ($i = 0; $i -lt 8; $i++) {
-    $jobs = @(Get-PrintJob -PrinterName $printer -ErrorAction SilentlyContinue)
-    if ($jobs.Count -eq 0) { break }
-    $bad = $jobs | Where-Object { $_.JobStatus -match 'Error|Offline|PaperOut|Blocked|UserIntervention' }
-    if ($bad) {
-      throw ("A impressora rejeitou o cupom (status: " + $bad[0].JobStatus + "). Verifique papel, cabo e se esta online.")
+    # O WritePrinter so enfileira: confirma que o spooler nao rejeitou o cupom.
+    Start-Sleep -Milliseconds 400
+    for ($i = 0; $i -lt 8; $i++) {
+      $jobs = @(Get-PrintJob -PrinterName $printer -ErrorAction SilentlyContinue)
+      if ($jobs.Count -eq 0) { break }
+      $bad = $jobs | Where-Object { $_.JobStatus -match 'Error|Offline|PaperOut|Blocked|UserIntervention' }
+      if ($bad) {
+        throw "Nao foi possivel imprimir. Verifique se ha papel e se a impressora esta ligada."
+      }
+      Start-Sleep -Milliseconds 300
     }
-    Start-Sleep -Milliseconds 300
   }
+
+  Write-Output "UNOOK"
+} catch {
+  # Desempacota ate a excecao mais interna (o PowerShell embrulha erros do C#
+  # em 'Excecao ao chamar Send...'); queremos so a mensagem amigavel original.
+  $ex = $_.Exception
+  while ($ex.InnerException) { $ex = $ex.InnerException }
+  $m = $ex.Message
+  if (-not $m) { $m = "Nao foi possivel imprimir. Verifique a impressora." }
+  Write-Output ("UNOERR:" + $m)
+  exit 1
 }
 `;
 
@@ -143,16 +155,30 @@ public class RawPrinter {
       "powershell.exe",
       ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", psFile],
       { windowsHide: true },
-      (error, stdout, stderr) => {
+      (error, stdout) => {
         try { fs.unlinkSync(binFile); } catch {}
         try { fs.unlinkSync(psFile); } catch {}
 
-        if (error) {
-          const detail = (stderr || stdout || error.message || "").trim();
-          reject(new Error(`Erro ao imprimir (RAW): ${detail}`));
-        } else {
-          resolve(true);
+        const out = String(stdout || "");
+        const idx = out.indexOf("UNOERR:");
+        if (idx !== -1) {
+          const msg =
+            out.slice(idx + 7).trim() ||
+            "Nao foi possivel imprimir. Verifique a impressora.";
+          return reject(new Error(msg));
         }
+        if (out.indexOf("UNOOK") !== -1) {
+          return resolve(true);
+        }
+        // Saida inesperada (ex.: falha do proprio PowerShell): mensagem generica.
+        if (error) {
+          return reject(
+            new Error(
+              "Nao foi possivel imprimir. Verifique a impressora e tente novamente."
+            )
+          );
+        }
+        resolve(true);
       }
     );
   });
