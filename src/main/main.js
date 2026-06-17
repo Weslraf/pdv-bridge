@@ -277,7 +277,23 @@ async function bootstrap() {
   );
 }
 
-app.whenReady().then(() => bootstrap().catch(console.error));
+// Instancia unica: evita dois Uno Print rodando ao mesmo tempo (um pegaria a
+// porta 8181 e o outro falharia, gerando dois icones/agentes e impressao
+// inconsistente). A segunda copia apenas foca a janela existente e encerra.
+const gotSingleInstanceLock = app.requestSingleInstanceLock();
+if (!gotSingleInstanceLock) {
+  app.quit();
+} else {
+  app.on("second-instance", () => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      if (!mainWindow.isVisible()) mainWindow.show();
+      mainWindow.focus();
+    }
+  });
+
+  app.whenReady().then(() => bootstrap().catch(console.error));
+}
 
 app.on("window-all-closed", () => {
   // Manter app ativo no tray no Windows.
