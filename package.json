@@ -1,6 +1,6 @@
 {
   "name": "uno-print",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Uno Print — impressao termica ESC/POS silenciosa para o seu sistema web.",
   "main": "src/main/main.js",
   "author": {

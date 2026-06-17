@@ -37,8 +37,27 @@ function buildClientHints(port) {
       settingsUrl: "chrome://settings/content/localNetworkAccess"
     },
     bodyPrintExample: {
-      text: ["PDV Bridge", "Teste de impressao", "----------------"],
+      text: ["Uno Print", "Teste de impressao", "----------------"],
       cut: true
+    },
+    qrcode: {
+      comoUsar:
+        "Para imprimir QR (ex.: PIX copia-e-cola), use uma das opcoes abaixo. " +
+        "A impressora precisa suportar QR nativo ESC/POS (ex.: Bematech MP-4200).",
+      viaTokenNaLinha: {
+        text: [
+          "Pague com PIX:",
+          "{{qr:00020126...5204000053039865802BR6304ABCD}}",
+          "Obrigado!"
+        ],
+        cut: true
+      },
+      viaCampoEstruturado: {
+        text: ["Pedido #1886", "TOTAL: R$ 50,00"],
+        qrcode: "00020126...5204000053039865802BR6304ABCD",
+        qr: { size: 6, ec: "M" },
+        cut: true
+      }
     }
   };
 }

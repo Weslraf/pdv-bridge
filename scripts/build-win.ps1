@@ -32,4 +32,5 @@ $exe = Join-Path $root "dist\win-unpacked\Uno Print.exe"
 Write-Host "==> 4/4 Remontando instalador a partir do pacote editado"
 npx electron-builder --win nsis --prepackaged "$root\dist\win-unpacked" --publish never
 
-Write-Host "Pronto: dist\Uno-Print-Setup-0.2.0.exe"
+$pkg = Get-Content (Join-Path $root "package.json") -Raw | ConvertFrom-Json
+Write-Host "Pronto: dist\Uno-Print-Setup-$($pkg.version).exe"
