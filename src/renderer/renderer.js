@@ -122,10 +122,10 @@ function renderStats() {
 }
 
 function buildHistItem(entry) {
-  const li = document.createElement("li");
-  li.className = "hist-item";
-
   const isOk = entry.status === "ok";
+  const li = document.createElement("li");
+  li.className = `hist-item ${isOk ? "is-ok" : "is-error"}`;
+
   const icon = document.createElement("span");
   icon.className = `hist-icon ${isOk ? "hist-icon--ok" : "hist-icon--err"}`;
   icon.innerHTML = isOk ? ICON_OK : ICON_ERR;
