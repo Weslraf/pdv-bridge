@@ -20,6 +20,10 @@
   box-sizing: border-box;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 html,
 body {
   margin: 0;
@@ -277,6 +281,64 @@ body {
   color: var(--danger-soft);
 }
 
+.hero-state-value.is-warn {
+  color: #ffd479;
+}
+
+.hero-hint {
+  position: relative;
+  margin: 8px 0 0;
+  font-size: 0.78rem;
+  color: var(--text-soft);
+}
+
+/* ---------- Onboarding ---------- */
+.card--setup {
+  background: linear-gradient(135deg, rgba(255, 212, 121, 0.12), rgba(255, 212, 121, 0.03));
+  border-color: rgba(255, 212, 121, 0.32);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.setup-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.setup-step p {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--text);
+}
+
+.setup-num {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #2a1c00;
+  background: #ffd479;
+}
+
+/* ---------- Estado salvo ---------- */
+.saved-state {
+  margin: 11px 0;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+
+.saved-state.is-saved {
+  color: var(--emerald-bright);
+  font-weight: 600;
+}
+
 .chip-version {
   font-size: 0.66rem;
   font-weight: 700;
@@ -402,6 +464,10 @@ body {
 
 .btn--primary:hover {
   box-shadow: 0 8px 24px rgba(31, 182, 115, 0.5);
+}
+
+.btn--full {
+  width: 100%;
 }
 
 .btn--outline {
@@ -696,11 +762,16 @@ body {
   color: var(--text-dim);
 }
 
+.details-lead {
+  margin: 0 0 8px !important;
+  color: var(--text-soft);
+}
+
 .adv-actions {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 6px;
-  margin-bottom: 12px;
+  margin: 12px 0;
 }
 
 .details-body p {

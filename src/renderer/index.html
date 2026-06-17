@@ -39,15 +39,24 @@
           <div class="hero-glow"></div>
           <div class="hero-row">
             <div class="hero-state">
-              <span class="hero-state-label">Servidor local</span>
-              <strong id="heroState" class="hero-state-value">Online</strong>
+              <span class="hero-state-label">Status</span>
+              <strong id="heroState" class="hero-state-value">Pronto</strong>
             </div>
             <span id="versionBadge" class="chip-version">v…</span>
           </div>
-          <button type="button" class="url-chip" id="copyBaseBtn" title="Copiar URL">
-            <span id="baseUrlDisplay" class="url-text">http://localhost:8181</span>
-            <span class="url-copy">copiar</span>
-          </button>
+          <p id="heroHint" class="hero-hint">Impressão automática ativa.</p>
+        </section>
+
+        <!-- Onboarding: aparece só quando nenhuma impressora está salva -->
+        <section class="card card--setup" id="setupBanner" hidden>
+          <div class="setup-step">
+            <span class="setup-num">1</span>
+            <p>Escolha sua impressora na lista abaixo — ela é salva automaticamente.</p>
+          </div>
+          <div class="setup-step">
+            <span class="setup-num">2</span>
+            <p>Clique em <strong>Imprimir teste</strong> para confirmar que está funcionando.</p>
+          </div>
         </section>
 
         <!-- Impressora -->
@@ -61,10 +70,8 @@
               <svg viewBox="0 0 24 24" width="17" height="17"><path d="M4 12a8 8 0 0 1 13.7-5.7M20 4v4h-4M20 12a8 8 0 0 1-13.7 5.7M4 20v-4h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </button>
           </div>
-          <div class="btn-pair">
-            <button type="button" class="btn btn--primary" id="savePrinterBtn">Salvar</button>
-            <button type="button" class="btn btn--outline" id="testPrintBtn">Imprimir teste</button>
-          </div>
+          <p id="savedState" class="saved-state">Selecione sua impressora acima.</p>
+          <button type="button" class="btn btn--primary btn--full" id="testPrintBtn">Imprimir teste</button>
         </section>
 
         <!-- Histórico -->
@@ -104,8 +111,15 @@
         <p id="statusText" class="status-line">Carregando…</p>
 
         <details class="details">
-          <summary>Conexão avançada (Chrome / Lovable)</summary>
+          <summary>Integração (desenvolvedor)</summary>
           <div class="details-body">
+            <p class="details-lead">
+              Endereço local que o seu sistema web usa para enviar os cupons:
+            </p>
+            <button type="button" class="url-chip" id="copyBaseBtn" title="Copiar URL">
+              <span id="baseUrlDisplay" class="url-text">http://localhost:8181</span>
+              <span class="url-copy">copiar</span>
+            </button>
             <div class="adv-actions">
               <button type="button" class="btn btn--ghost" id="openHealthBtn">/health</button>
               <button type="button" class="btn btn--ghost" id="openHintsBtn">/client-hints</button>

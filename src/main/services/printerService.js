@@ -53,6 +53,16 @@ $printer = '${psQuote(printerName)}'
 $binPath = '${psQuote(binFile)}'
 $bytes = [System.IO.File]::ReadAllBytes($binPath)
 
+# Aborta cedo se a impressora estiver marcada como OFFLINE no Windows.
+$offline = $false
+try {
+  $cim = Get-CimInstance Win32_Printer -Filter ("Name='" + ($printer -replace "'", "''") + "'") -ErrorAction Stop
+  if ($cim -and $cim.WorkOffline) { $offline = $true }
+} catch {}
+if ($offline) {
+  throw "A impressora esta OFFLINE no Windows. Verifique cabo, energia e papel, depois tente novamente."
+}
+
 # Tenta obter a porta fisica da impressora (ex: USB001, COM1, LPT1)
 $portName = $null
 try {
@@ -106,6 +116,19 @@ public class RawPrinter {
 "@
   Add-Type -TypeDefinition $src -Language CSharp
   [RawPrinter]::Send($printer, $bytes)
+
+  # O WritePrinter so enfileira: confirma que o spooler nao rejeitou o cupom
+  # (papel acabou, impressora offline, driver recusou etc.).
+  Start-Sleep -Milliseconds 400
+  for ($i = 0; $i -lt 8; $i++) {
+    $jobs = @(Get-PrintJob -PrinterName $printer -ErrorAction SilentlyContinue)
+    if ($jobs.Count -eq 0) { break }
+    $bad = $jobs | Where-Object { $_.JobStatus -match 'Error|Offline|PaperOut|Blocked|UserIntervention' }
+    if ($bad) {
+      throw ("A impressora rejeitou o cupom (status: " + $bad[0].JobStatus + "). Verifique papel, cabo e se esta online.")
+    }
+    Start-Sleep -Milliseconds 300
+  }
 }
 `;
 

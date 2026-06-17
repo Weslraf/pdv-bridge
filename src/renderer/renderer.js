@@ -1,7 +1,8 @@
 const printerSelect = document.getElementById("printerSelect");
 const refreshBtn = document.getElementById("refreshBtn");
-const savePrinterBtn = document.getElementById("savePrinterBtn");
 const testPrintBtn = document.getElementById("testPrintBtn");
+const savedState = document.getElementById("savedState");
+const setupBanner = document.getElementById("setupBanner");
 const startupToggle = document.getElementById("startupToggle");
 const statusText = document.getElementById("statusText");
 const versionBadge = document.getElementById("versionBadge");
@@ -14,6 +15,7 @@ const copyFetchBtn = document.getElementById("copyFetchBtn");
 const connDot = document.getElementById("connDot");
 const connLabel = document.getElementById("connLabel");
 const heroState = document.getElementById("heroState");
+const heroHint = document.getElementById("heroHint");
 
 const pinBtn = document.getElementById("pinBtn");
 const minBtn = document.getElementById("minBtn");
@@ -27,6 +29,8 @@ const statErr = document.getElementById("statErr");
 
 let baseUrl = "http://localhost:8181";
 let pinned = true;
+let isOnline = false;
+let savedPrinter = "";
 const entries = [];
 
 function setStatus(message) {
@@ -37,22 +41,49 @@ function buildFetchSnippet() {
   return `fetch("${baseUrl}/health", {\n  method: "GET",\n  targetAddressSpace: "loopback"\n})`;
 }
 
-/* ---------- Conexão ---------- */
-function setConnection(online) {
-  connDot.classList.toggle("is-online", online);
-  connDot.classList.toggle("is-off", !online);
-  connLabel.textContent = online ? "online · loopback" : "offline";
-  heroState.textContent = online ? "Online" : "Offline";
-  heroState.classList.toggle("is-off", !online);
+/* ---------- Estado geral (hero + onboarding) ---------- */
+function updateHero() {
+  connDot.classList.toggle("is-online", isOnline);
+  connDot.classList.toggle("is-off", !isOnline);
+  connLabel.textContent = isOnline ? "online · loopback" : "offline";
+
+  heroState.classList.remove("is-off", "is-warn");
+
+  if (!isOnline) {
+    heroState.textContent = "Offline";
+    heroState.classList.add("is-off");
+    heroHint.textContent = "O serviço local não respondeu. Reabra o app.";
+  } else if (!savedPrinter) {
+    heroState.textContent = "Configurar";
+    heroState.classList.add("is-warn");
+    heroHint.textContent = "Escolha sua impressora para começar.";
+  } else {
+    heroState.textContent = "Pronto";
+    heroHint.textContent = "Impressão automática ativa.";
+  }
+
+  // Onboarding aparece enquanto não houver impressora salva.
+  if (setupBanner) setupBanner.hidden = Boolean(savedPrinter);
+}
+
+function updateSavedState() {
+  if (savedPrinter) {
+    savedState.textContent = `✓ Impressora salva: ${savedPrinter}`;
+    savedState.classList.add("is-saved");
+  } else {
+    savedState.textContent = "Selecione sua impressora acima.";
+    savedState.classList.remove("is-saved");
+  }
 }
 
 async function pingHealth() {
   try {
     const r = await fetch(`${baseUrl}/health`, { method: "GET" });
-    setConnection(r.ok);
+    isOnline = r.ok;
   } catch {
-    setConnection(false);
+    isOnline = false;
   }
+  updateHero();
 }
 
 /* ---------- Impressoras ---------- */
@@ -65,6 +96,16 @@ function fillPrinterOptions(printers, selectedPrinterName) {
     option.textContent = "Nenhuma impressora encontrada";
     printerSelect.appendChild(option);
     return;
+  }
+
+  // Placeholder quando ainda não há nada salvo.
+  if (!selectedPrinterName) {
+    const ph = document.createElement("option");
+    ph.value = "";
+    ph.textContent = "— escolha sua impressora —";
+    ph.disabled = true;
+    ph.selected = true;
+    printerSelect.appendChild(ph);
   }
 
   printers.forEach((printer) => {
@@ -88,13 +129,14 @@ async function loadAppInfo() {
 }
 
 async function loadPrinters() {
-  setStatus("Carregando impressoras…");
   const [printers, selectedPrinterName] = await Promise.all([
     window.bridgeApi.getPrinters(),
     window.bridgeApi.getSelectedPrinter()
   ]);
-  fillPrinterOptions(printers, selectedPrinterName);
-  setStatus(`${printers.length} impressora(s) encontrada(s).`);
+  savedPrinter = selectedPrinterName || "";
+  fillPrinterOptions(printers, savedPrinter);
+  updateSavedState();
+  updateHero();
 }
 
 async function loadStartupPreference() {
@@ -197,19 +239,25 @@ async function loadHistory() {
 refreshBtn.addEventListener("click", () => {
   loadPrinters();
   pingHealth();
+  setStatus("Lista de impressoras atualizada.");
 });
 
-savePrinterBtn.addEventListener("click", async () => {
-  const selectedPrinter = printerSelect.value;
-  await window.bridgeApi.setSelectedPrinter(selectedPrinter);
-  setStatus(
-    selectedPrinter
-      ? `Impressora salva: ${selectedPrinter}`
-      : "Nenhuma impressora selecionada."
-  );
+// Salvar automaticamente ao escolher a impressora — sem botão extra.
+printerSelect.addEventListener("change", async () => {
+  const selected = printerSelect.value;
+  if (!selected) return;
+  await window.bridgeApi.setSelectedPrinter(selected);
+  savedPrinter = selected;
+  updateSavedState();
+  updateHero();
+  setStatus(`Impressora salva: ${selected}`);
 });
 
 testPrintBtn.addEventListener("click", async () => {
+  if (!savedPrinter) {
+    setStatus("Escolha sua impressora primeiro.");
+    return;
+  }
   setStatus("Enviando teste para a impressora…");
   const result = await window.bridgeApi.printTest();
   if (result.ok) {
@@ -274,7 +322,8 @@ window.bridgeApi.onServerLog((message) => {
 
 window.bridgeApi.onHistoryAdded((entry) => {
   prependEntry(entry);
-  setConnection(true);
+  isOnline = true;
+  updateHero();
 });
 
 /* ---------- Init ---------- */
