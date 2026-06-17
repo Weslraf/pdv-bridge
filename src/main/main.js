@@ -81,6 +81,7 @@ function createMainWindow() {
     y,
     show: true,
     title: APP_NAME,
+    icon: APP_ICON,
     frame: false,
     transparent: true,
     resizable: false,

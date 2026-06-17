@@ -7,7 +7,7 @@ module.exports = {
   APP_VERSION: rootPackage.version || "0.0.0",
   APP_USER_MODEL_ID: rootPackage.build?.appId || "com.unoprint.app",
   SERVER_PORT: 8181,
-  APP_ICON: path.join(__dirname, "..", "..", "build", "icon.png"),
+  APP_ICON: path.join(__dirname, "..", "assets", "icon.png"),
   PRELOAD_PATH: path.join(__dirname, "preload.js"),
   RENDERER_PATH: path.join(__dirname, "..", "renderer", "index.html")
 };

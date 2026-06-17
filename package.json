@@ -30,7 +30,7 @@
     },
     "win": {
       "signAndEditExecutable": false,
-      "icon": "build/icon.png",
+      "icon": "build/icon.ico",
       "verifyUpdateCodeSignature": false,
       "executableName": "Uno Print",
       "target": [
