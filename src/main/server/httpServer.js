@@ -1,8 +1,9 @@
 const http = require("http");
 const express = require("express");
-const { SERVER_PORT } = require("../config");
+const { SERVER_PORT, APP_VERSION } = require("../config");
 const { printEscPos } = require("../services/printerService");
 const { buildClientHints } = require("../services/clientHints");
+const printHistory = require("../services/printHistory");
 const {
   getSelectedPrinterName,
   setSelectedPrinterName
@@ -54,7 +55,8 @@ function buildApp({ getPrinters, onPrintRequest }) {
     res.json({
       ok: true,
       service: "pdv-bridge",
-      version: "0.1.0",
+      product: "Uno Press",
+      version: APP_VERSION,
       port: SERVER_PORT
     });
   });
@@ -79,6 +81,12 @@ function buildApp({ getPrinters, onPrintRequest }) {
         body.printerName || getSelectedPrinterName() || "";
 
       if (!selectedPrinterName) {
+        printHistory.add({
+          source: "http",
+          payload: body,
+          status: "error",
+          error: "Nenhuma impressora selecionada."
+        });
         return res.status(400).json({
           ok: false,
           error: "Nenhuma impressora selecionada."
@@ -86,6 +94,12 @@ function buildApp({ getPrinters, onPrintRequest }) {
       }
 
       await printEscPos(selectedPrinterName, body);
+      printHistory.add({
+        source: "http",
+        payload: body,
+        status: "ok",
+        printerName: selectedPrinterName
+      });
       onPrintRequest?.(body);
 
       return res.json({
@@ -93,6 +107,13 @@ function buildApp({ getPrinters, onPrintRequest }) {
         printerName: selectedPrinterName
       });
     } catch (error) {
+      printHistory.add({
+        source: "http",
+        payload: req.body || {},
+        status: "error",
+        printerName: getSelectedPrinterName() || "",
+        error: error.message
+      });
       return res.status(500).json({
         ok: false,
         error: error.message

@@ -7,7 +7,8 @@ const {
   Tray,
   nativeImage,
   shell,
-  clipboard
+  clipboard,
+  screen
 } = require("electron");
 const {
   APP_NAME,
@@ -21,6 +22,7 @@ const {
 const { createHttpServer } = require("./server/httpServer");
 const { createSocketGateway } = require("./websocket/socketGateway");
 const { printEscPos } = require("./services/printerService");
+const printHistory = require("./services/printHistory");
 const {
   getSelectedPrinterName,
   setSelectedPrinterName,
@@ -57,14 +59,36 @@ function applyStartupSetting(enabled) {
 }
 
 function createMainWindow() {
+  const WIN_WIDTH = 360;
+  const WIN_HEIGHT = 600;
+
+  // Posiciona como um gadget no canto superior direito da area de trabalho.
+  let x;
+  let y;
+  try {
+    const { workArea } = screen.getPrimaryDisplay();
+    x = workArea.x + workArea.width - WIN_WIDTH - 24;
+    y = workArea.y + 24;
+  } catch {
+    x = undefined;
+    y = undefined;
+  }
+
   mainWindow = new BrowserWindow({
-    width: 420,
-    height: 680,
-    minWidth: 360,
-    minHeight: 520,
+    width: WIN_WIDTH,
+    height: WIN_HEIGHT,
+    x,
+    y,
     show: true,
     title: APP_NAME,
-    backgroundColor: "#0f172a",
+    frame: false,
+    transparent: true,
+    resizable: false,
+    maximizable: false,
+    fullscreenable: false,
+    alwaysOnTop: true,
+    backgroundColor: "#00000000",
+    hasShadow: false,
     webPreferences: {
       preload: PRELOAD_PATH,
       contextIsolation: true,
@@ -72,6 +96,7 @@ function createMainWindow() {
     }
   });
 
+  mainWindow.setAlwaysOnTop(true, "floating");
   mainWindow.loadFile(RENDERER_PATH);
 
   mainWindow.on("close", (event) => {
@@ -88,7 +113,7 @@ function createTray() {
 
   const contextMenu = Menu.buildFromTemplate([
     {
-      label: "Abrir PDV Bridge",
+      label: "Abrir Uno Press",
       click: () => mainWindow?.show()
     },
     {
@@ -168,21 +193,58 @@ function setupIpc() {
     if (!name) {
       return { ok: false, error: "Selecione e salve uma impressora primeiro." };
     }
+    const payload = {
+      text: [
+        "Uno Press",
+        "Teste de impressao",
+        new Date().toLocaleString("pt-BR"),
+        "----------------",
+        "OK"
+      ],
+      cut: true
+    };
     try {
-      await printEscPos(name, {
-        text: [
-          "PDV Bridge",
-          "Teste de impressao",
-          new Date().toLocaleString("pt-BR"),
-          "----------------",
-          "OK"
-        ],
-        cut: true
+      await printEscPos(name, payload);
+      printHistory.add({
+        source: "test",
+        payload,
+        status: "ok",
+        printerName: name
       });
       return { ok: true };
     } catch (e) {
+      printHistory.add({
+        source: "test",
+        payload,
+        status: "error",
+        printerName: name,
+        error: e.message
+      });
       return { ok: false, error: e.message };
     }
+  });
+
+  ipcMain.handle("history:list", () => ({
+    entries: printHistory.list(),
+    stats: printHistory.stats()
+  }));
+  ipcMain.handle("history:clear", () => {
+    printHistory.clear();
+    return { ok: true };
+  });
+
+  ipcMain.handle("window:minimize", () => {
+    mainWindow?.minimize();
+    return { ok: true };
+  });
+  ipcMain.handle("window:hide", () => {
+    mainWindow?.hide();
+    return { ok: true };
+  });
+  ipcMain.handle("window:pin", (_event, pinned) => {
+    const flag = Boolean(pinned);
+    mainWindow?.setAlwaysOnTop(flag, "floating");
+    return { ok: true, pinned: flag };
   });
 }
 
@@ -191,6 +253,13 @@ async function bootstrap() {
   createTray();
   setupIpc();
   socketGateway.init();
+
+  // Empurra cada nova impressao para a UI em tempo real.
+  printHistory.onAdd((entry) => {
+    if (mainWindow) {
+      mainWindow.webContents.send("history:added", entry);
+    }
+  });
 
   applyStartupSetting(getStartWithWindows());
 

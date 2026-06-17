@@ -12,5 +12,16 @@ contextBridge.exposeInMainWorld("bridgeApi", {
   copyText: (text) => ipcRenderer.invoke("clipboard:writeText", text),
   printTest: () => ipcRenderer.invoke("print:test"),
   onServerLog: (handler) =>
-    ipcRenderer.on("server:log", (_, message) => handler(message))
+    ipcRenderer.on("server:log", (_, message) => handler(message)),
+
+  // Histórico de impressões
+  getHistory: () => ipcRenderer.invoke("history:list"),
+  clearHistory: () => ipcRenderer.invoke("history:clear"),
+  onHistoryAdded: (handler) =>
+    ipcRenderer.on("history:added", (_, entry) => handler(entry)),
+
+  // Controles da janela flutuante
+  minimizeWindow: () => ipcRenderer.invoke("window:minimize"),
+  hideWindow: () => ipcRenderer.invoke("window:hide"),
+  setPinned: (pinned) => ipcRenderer.invoke("window:pin", pinned)
 });

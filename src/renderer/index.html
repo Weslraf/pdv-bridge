@@ -3,100 +3,126 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PDV Bridge</title>
+    <title>Uno Press</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <div class="app">
-      <header class="hero">
-        <div class="hero-brand">
-          <div class="hero-logo" aria-hidden="true"></div>
-          <div>
-            <h1>PDV Bridge</h1>
-            <p class="hero-tagline">Impressao ESC/POS silenciosa para o seu sistema web</p>
+    <div class="gadget">
+      <!-- Barra de título (arrastável) -->
+      <header class="titlebar">
+        <div class="titlebar-brand">
+          <img class="brand-logo" src="./logo.svg" alt="Uno Press" />
+          <div class="brand-text">
+            <span class="brand-name">Uno Press</span>
+            <span class="brand-sub">
+              <span id="connDot" class="conn-dot"></span>
+              <span id="connLabel">conectando…</span>
+            </span>
           </div>
         </div>
-        <span id="versionBadge" class="badge">v…</span>
+        <div class="win-btns">
+          <button id="pinBtn" class="win-btn is-active" title="Fixar no topo" aria-label="Fixar no topo">
+            <svg viewBox="0 0 24 24" width="15" height="15"><path d="M9 4h6l-1 7 3 3v2h-5v5l-1 1-1-1v-5H4v-2l3-3z" fill="currentColor"/></svg>
+          </button>
+          <button id="minBtn" class="win-btn" title="Minimizar" aria-label="Minimizar">
+            <svg viewBox="0 0 24 24" width="15" height="15"><rect x="5" y="11" width="14" height="2" rx="1" fill="currentColor"/></svg>
+          </button>
+          <button id="closeBtn" class="win-btn win-btn--close" title="Ocultar (segue na bandeja)" aria-label="Ocultar">
+            <svg viewBox="0 0 24 24" width="15" height="15"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          </button>
+        </div>
       </header>
 
-      <main class="main">
-        <section class="panel panel--accent">
-          <div class="panel-head">
-            <span class="status-dot status-dot--live" aria-hidden="true"></span>
-            <div>
-              <h2 class="panel-title">API local</h2>
-              <p class="panel-desc">Rodando neste computador apenas (loopback)</p>
+      <div class="content">
+        <!-- Status / conexão -->
+        <section class="card card--hero">
+          <div class="hero-glow"></div>
+          <div class="hero-row">
+            <div class="hero-state">
+              <span class="hero-state-label">Servidor local</span>
+              <strong id="heroState" class="hero-state-value">Online</strong>
             </div>
+            <span id="versionBadge" class="chip-version">v…</span>
           </div>
-          <code id="baseUrlDisplay" class="mono-block">http://localhost:8181</code>
-          <div class="btn-grid">
-            <button type="button" class="btn btn--ghost" id="copyBaseBtn">
-              Copiar URL
-            </button>
-            <button type="button" class="btn btn--ghost" id="openHealthBtn">
-              Abrir /health
-            </button>
-            <button type="button" class="btn btn--ghost" id="openHintsBtn">
-              Abrir /client-hints
-            </button>
-            <button type="button" class="btn btn--ghost" id="copyFetchBtn">
-              Copiar exemplo fetch
-            </button>
-          </div>
+          <button type="button" class="url-chip" id="copyBaseBtn" title="Copiar URL">
+            <span id="baseUrlDisplay" class="url-text">http://localhost:8181</span>
+            <span class="url-copy">copiar</span>
+          </button>
         </section>
 
-        <section class="panel">
-          <h2 class="panel-title">Impressora</h2>
-          <label class="field-label" for="printerSelect">Impressora termica</label>
+        <!-- Impressora -->
+        <section class="card">
+          <div class="card-head">
+            <h2 class="card-title">Impressora térmica</h2>
+          </div>
           <div class="row">
             <select id="printerSelect" class="select"></select>
-            <button type="button" class="btn btn--secondary" id="refreshBtn">
-              Atualizar
+            <button type="button" class="btn btn--icon" id="refreshBtn" title="Atualizar lista">
+              <svg viewBox="0 0 24 24" width="17" height="17"><path d="M4 12a8 8 0 0 1 13.7-5.7M20 4v4h-4M20 12a8 8 0 0 1-13.7 5.7M4 20v-4h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </button>
           </div>
-          <button type="button" class="btn btn--primary" id="savePrinterBtn">
-            Salvar impressora
-          </button>
-          <button type="button" class="btn btn--outline" id="testPrintBtn">
-            Imprimir teste
-          </button>
+          <div class="btn-pair">
+            <button type="button" class="btn btn--primary" id="savePrinterBtn">Salvar</button>
+            <button type="button" class="btn btn--outline" id="testPrintBtn">Imprimir teste</button>
+          </div>
         </section>
 
-        <section class="panel panel--compact">
+        <!-- Histórico -->
+        <section class="card">
+          <div class="card-head card-head--between">
+            <h2 class="card-title">Cupons impressos</h2>
+            <button type="button" class="link-btn" id="clearHistoryBtn">limpar</button>
+          </div>
+          <div class="hist-stats">
+            <div class="stat">
+              <span class="stat-num" id="statTotal">0</span>
+              <span class="stat-label">total</span>
+            </div>
+            <div class="stat stat--ok">
+              <span class="stat-num" id="statOk">0</span>
+              <span class="stat-label">impressos</span>
+            </div>
+            <div class="stat stat--err">
+              <span class="stat-num" id="statErr">0</span>
+              <span class="stat-label">falhas</span>
+            </div>
+          </div>
+          <ul id="historyList" class="hist-list">
+            <li class="hist-empty">Nenhum cupom ainda. Os pedidos enviados pelo seu sistema aparecem aqui.</li>
+          </ul>
+        </section>
+
+        <!-- Preferências -->
+        <section class="card card--compact">
           <label class="toggle">
             <input type="checkbox" id="startupToggle" />
             <span class="toggle-ui"></span>
-            <span class="toggle-text">Iniciar com Windows</span>
+            <span class="toggle-text">Iniciar com o Windows</span>
           </label>
         </section>
 
-        <section class="panel">
-          <h2 class="panel-title">Status</h2>
-          <p id="statusText" class="status-msg">Carregando…</p>
-        </section>
+        <p id="statusText" class="status-line">Carregando…</p>
 
         <details class="details">
-          <summary>Chrome e preview (Lovable / iframe)</summary>
+          <summary>Conexão avançada (Chrome / Lovable)</summary>
           <div class="details-body">
+            <div class="adv-actions">
+              <button type="button" class="btn btn--ghost" id="openHealthBtn">/health</button>
+              <button type="button" class="btn btn--ghost" id="openHintsBtn">/client-hints</button>
+              <button type="button" class="btn btn--ghost" id="copyFetchBtn">copiar fetch</button>
+            </div>
             <p>
               Sites em <strong>HTTPS</strong> precisam de
-              <code>targetAddressSpace: "loopback"</code> no <code>fetch</code>
-              para falar com este app. O Chrome pode pedir permissao de rede
-              local.
-            </p>
-            <p>
-              <strong>Preview dentro de iframe</strong> (ex.: Lovable) pode
-              bloquear mesmo com tudo permitido: teste em
-              <strong>aba propria</strong> do seu dominio ou em
-              <code>http://localhost</code> no dev.
+              <code>targetAddressSpace: "loopback"</code> no <code>fetch</code>.
+              O Chrome pode pedir permissão de rede local.
             </p>
             <p class="details-note">
-              Seu front pode carregar dicas em JSON em
-              <code>/client-hints</code> (mesmo host e porta).
+              Preview em <strong>iframe</strong> (Lovable) pode bloquear loopback:
+              teste em <strong>aba própria</strong> do seu domínio.
             </p>
           </div>
         </details>
-      </main>
+      </div>
     </div>
 
     <script src="./renderer.js"></script>

@@ -11,7 +11,23 @@ const openHealthBtn = document.getElementById("openHealthBtn");
 const openHintsBtn = document.getElementById("openHintsBtn");
 const copyFetchBtn = document.getElementById("copyFetchBtn");
 
+const connDot = document.getElementById("connDot");
+const connLabel = document.getElementById("connLabel");
+const heroState = document.getElementById("heroState");
+
+const pinBtn = document.getElementById("pinBtn");
+const minBtn = document.getElementById("minBtn");
+const closeBtn = document.getElementById("closeBtn");
+
+const historyList = document.getElementById("historyList");
+const clearHistoryBtn = document.getElementById("clearHistoryBtn");
+const statTotal = document.getElementById("statTotal");
+const statOk = document.getElementById("statOk");
+const statErr = document.getElementById("statErr");
+
 let baseUrl = "http://localhost:8181";
+let pinned = true;
+const entries = [];
 
 function setStatus(message) {
   statusText.textContent = message;
@@ -21,6 +37,25 @@ function buildFetchSnippet() {
   return `fetch("${baseUrl}/health", {\n  method: "GET",\n  targetAddressSpace: "loopback"\n})`;
 }
 
+/* ---------- Conexão ---------- */
+function setConnection(online) {
+  connDot.classList.toggle("is-online", online);
+  connDot.classList.toggle("is-off", !online);
+  connLabel.textContent = online ? "online · loopback" : "offline";
+  heroState.textContent = online ? "Online" : "Offline";
+  heroState.classList.toggle("is-off", !online);
+}
+
+async function pingHealth() {
+  try {
+    const r = await fetch(`${baseUrl}/health`, { method: "GET" });
+    setConnection(r.ok);
+  } catch {
+    setConnection(false);
+  }
+}
+
+/* ---------- Impressoras ---------- */
 function fillPrinterOptions(printers, selectedPrinterName) {
   printerSelect.innerHTML = "";
 
@@ -36,7 +71,7 @@ function fillPrinterOptions(printers, selectedPrinterName) {
     const option = document.createElement("option");
     option.value = printer.name;
     option.textContent = printer.isDefault
-      ? `${printer.name} (padrao)`
+      ? `${printer.name} (padrão)`
       : printer.name;
     if (printer.name === selectedPrinterName) {
       option.selected = true;
@@ -59,7 +94,7 @@ async function loadPrinters() {
     window.bridgeApi.getSelectedPrinter()
   ]);
   fillPrinterOptions(printers, selectedPrinterName);
-  setStatus(`Pronta. ${printers.length} impressora(s) encontrada(s).`);
+  setStatus(`${printers.length} impressora(s) encontrada(s).`);
 }
 
 async function loadStartupPreference() {
@@ -67,7 +102,102 @@ async function loadStartupPreference() {
   startupToggle.checked = Boolean(enabled);
 }
 
-refreshBtn.addEventListener("click", loadPrinters);
+/* ---------- Histórico ---------- */
+function fmtTime(iso) {
+  const d = new Date(iso);
+  return d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+}
+
+const ICON_OK =
+  '<svg viewBox="0 0 24 24" width="13" height="13"><path d="M5 13l4 4L19 7" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const ICON_ERR =
+  '<svg viewBox="0 0 24 24" width="13" height="13"><path d="M7 7l10 10M17 7L7 17" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>';
+
+function renderStats() {
+  const ok = entries.filter((e) => e.status === "ok").length;
+  const err = entries.length - ok;
+  statTotal.textContent = String(entries.length);
+  statOk.textContent = String(ok);
+  statErr.textContent = String(err);
+}
+
+function buildHistItem(entry) {
+  const li = document.createElement("li");
+  li.className = "hist-item";
+
+  const isOk = entry.status === "ok";
+  const icon = document.createElement("span");
+  icon.className = `hist-icon ${isOk ? "hist-icon--ok" : "hist-icon--err"}`;
+  icon.innerHTML = isOk ? ICON_OK : ICON_ERR;
+
+  const body = document.createElement("div");
+  body.className = "hist-body";
+
+  const title = document.createElement("div");
+  title.className = "hist-title";
+  title.textContent = entry.title || "Cupom";
+
+  const meta = document.createElement("div");
+  meta.className = "hist-meta";
+  const tag = document.createElement("span");
+  tag.className = `hist-tag ${entry.source === "test" ? "hist-tag--test" : ""}`;
+  tag.textContent = entry.source === "test" ? "teste" : "sistema";
+  const time = document.createElement("span");
+  time.textContent = fmtTime(entry.time);
+  const lines = document.createElement("span");
+  lines.textContent = `${entry.lineCount} linha(s)`;
+  meta.append(tag, time, lines);
+
+  body.append(title, meta);
+
+  if (!isOk && entry.error) {
+    const err = document.createElement("div");
+    err.className = "hist-err-msg";
+    err.textContent = entry.error;
+    body.appendChild(err);
+  }
+
+  li.append(icon, body);
+  return li;
+}
+
+function renderHistory() {
+  historyList.innerHTML = "";
+  if (!entries.length) {
+    const li = document.createElement("li");
+    li.className = "hist-empty";
+    li.textContent =
+      "Nenhum cupom ainda. Os pedidos enviados pelo seu sistema aparecem aqui.";
+    historyList.appendChild(li);
+    renderStats();
+    return;
+  }
+  for (const entry of entries) {
+    historyList.appendChild(buildHistItem(entry));
+  }
+  renderStats();
+}
+
+function prependEntry(entry) {
+  entries.unshift(entry);
+  if (entries.length > 200) entries.length = 200;
+  renderHistory();
+}
+
+async function loadHistory() {
+  const data = await window.bridgeApi.getHistory();
+  entries.length = 0;
+  if (data && Array.isArray(data.entries)) {
+    entries.push(...data.entries);
+  }
+  renderHistory();
+}
+
+/* ---------- Eventos ---------- */
+refreshBtn.addEventListener("click", () => {
+  loadPrinters();
+  pingHealth();
+});
 
 savePrinterBtn.addEventListener("click", async () => {
   const selectedPrinter = printerSelect.value;
@@ -93,24 +223,24 @@ startupToggle.addEventListener("change", async (event) => {
   await window.bridgeApi.setStartWithWindows(event.target.checked);
   setStatus(
     event.target.checked
-      ? "O PDV Bridge abrira com o Windows."
-      : "Inicio automatico desativado."
+      ? "O Uno Press abrirá com o Windows."
+      : "Início automático desativado."
   );
 });
 
 copyBaseBtn.addEventListener("click", async () => {
   await window.bridgeApi.copyText(baseUrl);
-  setStatus("URL copiada para a area de transferencia.");
+  setStatus("URL copiada para a área de transferência.");
 });
 
 openHealthBtn.addEventListener("click", async () => {
   const r = await window.bridgeApi.openExternal(`${baseUrl}/health`);
-  if (!r.ok) setStatus(r.error || "Nao foi possivel abrir o navegador.");
+  if (!r.ok) setStatus(r.error || "Não foi possível abrir o navegador.");
 });
 
 openHintsBtn.addEventListener("click", async () => {
   const r = await window.bridgeApi.openExternal(`${baseUrl}/client-hints`);
-  if (!r.ok) setStatus(r.error || "Nao foi possivel abrir o navegador.");
+  if (!r.ok) setStatus(r.error || "Não foi possível abrir o navegador.");
 });
 
 copyFetchBtn.addEventListener("click", async () => {
@@ -118,12 +248,40 @@ copyFetchBtn.addEventListener("click", async () => {
   setStatus("Exemplo de fetch copiado (com targetAddressSpace).");
 });
 
+clearHistoryBtn.addEventListener("click", async () => {
+  await window.bridgeApi.clearHistory();
+  entries.length = 0;
+  renderHistory();
+  setStatus("Histórico limpo.");
+});
+
+/* ---------- Controles da janela ---------- */
+pinBtn.addEventListener("click", async () => {
+  pinned = !pinned;
+  const r = await window.bridgeApi.setPinned(pinned);
+  pinned = r.pinned;
+  pinBtn.classList.toggle("is-active", pinned);
+  pinBtn.title = pinned ? "Fixar no topo (ativo)" : "Fixar no topo (desativado)";
+});
+
+minBtn.addEventListener("click", () => window.bridgeApi.minimizeWindow());
+closeBtn.addEventListener("click", () => window.bridgeApi.hideWindow());
+
+/* ---------- Push de servidor / histórico ---------- */
 window.bridgeApi.onServerLog((message) => {
   setStatus(message);
 });
 
+window.bridgeApi.onHistoryAdded((entry) => {
+  prependEntry(entry);
+  setConnection(true);
+});
+
+/* ---------- Init ---------- */
 (async function init() {
   await loadAppInfo();
-  await loadPrinters();
-  await loadStartupPreference();
+  await Promise.all([loadPrinters(), loadStartupPreference(), loadHistory()]);
+  await pingHealth();
+  setInterval(pingHealth, 8000);
+  setStatus("Pronto.");
 })();

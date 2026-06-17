@@ -1,0 +1,38 @@
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="unoBg" cx="42%" cy="28%" r="90%">
+      <stop offset="0%" stop-color="#33a576"/>
+      <stop offset="52%" stop-color="#178a5b"/>
+      <stop offset="100%" stop-color="#0b5538"/>
+    </radialGradient>
+    <linearGradient id="unoCart" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#d4ffec"/>
+    </linearGradient>
+    <filter id="unoGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="7" result="b"/>
+      <feMerge>
+        <feMergeNode in="b"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect x="16" y="16" width="480" height="480" rx="122" fill="url(#unoBg)"/>
+
+  <g stroke="#eafff6" stroke-linecap="round" fill="none">
+    <line x1="74" y1="214" x2="152" y2="214" stroke-width="12" opacity="0.16"/>
+    <line x1="58" y1="250" x2="160" y2="250" stroke-width="13" opacity="0.30"/>
+    <line x1="78" y1="286" x2="152" y2="286" stroke-width="12" opacity="0.22"/>
+    <line x1="50" y1="322" x2="152" y2="322" stroke-width="13" opacity="0.42"/>
+    <line x1="84" y1="358" x2="152" y2="358" stroke-width="12" opacity="0.22"/>
+  </g>
+
+  <g transform="translate(150 122) scale(11.2)" filter="url(#unoGlow)"
+     fill="none" stroke="url(#unoCart)" stroke-width="1.7"
+     stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="9" cy="21" r="1.55"/>
+    <circle cx="20" cy="21" r="1.55"/>
+    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+  </g>
+</svg>

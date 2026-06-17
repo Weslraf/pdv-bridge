@@ -1,10 +1,10 @@
 {
-  "name": "pdv-bridge",
-  "version": "0.1.0",
-  "description": "Bridge local para impressao termica ESC/POS via HTTP.",
+  "name": "uno-press",
+  "version": "0.2.0",
+  "description": "Uno Press — impressao termica ESC/POS silenciosa para o seu sistema web.",
   "main": "src/main/main.js",
   "author": {
-    "name": "PDV Bridge Tecnologia"
+    "name": "Uno Press"
   },
   "license": "MIT",
   "scripts": {
@@ -22,17 +22,17 @@
     "electron-builder": "^26.8.1"
   },
   "build": {
-    "appId": "com.pdvbridge.app",
-    "productName": "PDV Bridge",
-    "copyright": "Copyright © 2026 PDV Bridge Tecnologia",
+    "appId": "com.unopress.app",
+    "productName": "Uno Press",
+    "copyright": "Copyright © 2026 Uno Press",
     "directories": {
       "buildResources": "build"
     },
     "win": {
       "signAndEditExecutable": false,
-      "icon": "build/icon.ico",
+      "icon": "build/icon.png",
       "verifyUpdateCodeSignature": false,
-      "executableName": "PDV Bridge",
+      "executableName": "Uno Press",
       "target": [
         {
           "target": "nsis",
@@ -41,7 +41,7 @@
           ]
         }
       ],
-      "artifactName": "PDV-Bridge-Setup-${version}.${ext}"
+      "artifactName": "Uno-Press-Setup-${version}.${ext}"
     },
     "nsis": {
       "oneClick": false,
@@ -49,7 +49,7 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "menuCategory": true,
-      "shortcutName": "PDV Bridge",
+      "shortcutName": "Uno Press",
       "uninstallDisplayName": "${productName} ${version}"
     },
     "files": [
@@ -57,7 +57,7 @@
       "package.json"
     ],
     "extraMetadata": {
-      "companyName": "PDV Bridge Tecnologia"
+      "companyName": "Uno Press"
     }
   }
 }
