@@ -55,7 +55,7 @@ function buildApp({ getPrinters, onPrintRequest }) {
     res.json({
       ok: true,
       service: "pdv-bridge",
-      product: "Uno Press",
+      product: "Uno Print",
       version: APP_VERSION,
       port: SERVER_PORT
     });

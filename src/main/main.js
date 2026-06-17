@@ -113,7 +113,7 @@ function createTray() {
 
   const contextMenu = Menu.buildFromTemplate([
     {
-      label: "Abrir Uno Press",
+      label: "Abrir Uno Print",
       click: () => mainWindow?.show()
     },
     {
@@ -195,7 +195,7 @@ function setupIpc() {
     }
     const payload = {
       text: [
-        "Uno Press",
+        "Uno Print",
         "Teste de impressao",
         new Date().toLocaleString("pt-BR"),
         "----------------",

@@ -4,7 +4,7 @@ const { contextBridge } = require("electron");
 const sampleHistory = [
   { id: "1", time: new Date().toISOString(), source: "http", title: "ADEGA DA SKINA", preview: [], lineCount: 14, printerName: "Bematech MP-4200 HS", status: "ok", error: "" },
   { id: "2", time: new Date(Date.now() - 120000).toISOString(), source: "http", title: "Pedido #1632 - 2x Heineken 600ml", preview: [], lineCount: 11, printerName: "Bematech MP-4200 HS", status: "ok", error: "" },
-  { id: "3", time: new Date(Date.now() - 300000).toISOString(), source: "test", title: "Uno Press", preview: [], lineCount: 5, printerName: "Bematech MP-4200 HS", status: "ok", error: "" },
+  { id: "3", time: new Date(Date.now() - 300000).toISOString(), source: "test", title: "Uno Print", preview: [], lineCount: 5, printerName: "Bematech MP-4200 HS", status: "ok", error: "" },
   { id: "4", time: new Date(Date.now() - 600000).toISOString(), source: "http", title: "Pedido #1629", preview: [], lineCount: 9, printerName: "Bematech MP-4200 HS", status: "error", error: "OpenPrinter falhou (codigo 1801). Verifique o nome da impressora." }
 ];
 
@@ -17,7 +17,7 @@ contextBridge.exposeInMainWorld("bridgeApi", {
   setSelectedPrinter: async () => ({ ok: true }),
   getStartWithWindows: async () => true,
   setStartWithWindows: async () => ({ ok: true }),
-  getAppInfo: async () => ({ name: "Uno Press", version: "0.2.0", port: 8181, baseUrl: "http://localhost:8181" }),
+  getAppInfo: async () => ({ name: "Uno Print", version: "0.2.0", port: 8181, baseUrl: "http://localhost:8181" }),
   openExternal: async () => ({ ok: true }),
   copyText: async () => ({ ok: true }),
   printTest: async () => ({ ok: true }),

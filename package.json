@@ -1,10 +1,10 @@
 {
-  "name": "uno-press",
+  "name": "uno-print",
   "version": "0.2.0",
-  "description": "Uno Press — impressao termica ESC/POS silenciosa para o seu sistema web.",
+  "description": "Uno Print — impressao termica ESC/POS silenciosa para o seu sistema web.",
   "main": "src/main/main.js",
   "author": {
-    "name": "Uno Press"
+    "name": "Uno Print"
   },
   "license": "MIT",
   "scripts": {
@@ -22,9 +22,9 @@
     "electron-builder": "^26.8.1"
   },
   "build": {
-    "appId": "com.unopress.app",
-    "productName": "Uno Press",
-    "copyright": "Copyright © 2026 Uno Press",
+    "appId": "com.unoprint.app",
+    "productName": "Uno Print",
+    "copyright": "Copyright © 2026 Uno Print",
     "directories": {
       "buildResources": "build"
     },
@@ -32,7 +32,7 @@
       "signAndEditExecutable": false,
       "icon": "build/icon.png",
       "verifyUpdateCodeSignature": false,
-      "executableName": "Uno Press",
+      "executableName": "Uno Print",
       "target": [
         {
           "target": "nsis",
@@ -41,7 +41,7 @@
           ]
         }
       ],
-      "artifactName": "Uno-Press-Setup-${version}.${ext}"
+      "artifactName": "Uno-Print-Setup-${version}.${ext}"
     },
     "nsis": {
       "oneClick": false,
@@ -49,7 +49,7 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "menuCategory": true,
-      "shortcutName": "Uno Press",
+      "shortcutName": "Uno Print",
       "uninstallDisplayName": "${productName} ${version}"
     },
     "files": [
@@ -57,7 +57,7 @@
       "package.json"
     ],
     "extraMetadata": {
-      "companyName": "Uno Press"
+      "companyName": "Uno Print"
     }
   }
 }

@@ -223,7 +223,7 @@ startupToggle.addEventListener("change", async (event) => {
   await window.bridgeApi.setStartWithWindows(event.target.checked);
   setStatus(
     event.target.checked
-      ? "O Uno Press abrirá com o Windows."
+      ? "O Uno Print abrirá com o Windows."
       : "Início automático desativado."
   );
 });
