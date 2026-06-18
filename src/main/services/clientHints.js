@@ -40,6 +40,33 @@ function buildClientHints(port) {
       text: ["Uno Print", "Teste de impressao", "----------------"],
       cut: true
     },
+    blocks: {
+      comoUsar:
+        "Formato estruturado para paridade total com o cupom: alinhamento, " +
+        "negrito, tamanho, divisorias, linhas label/valor (kv), tabela e QR. " +
+        "Consulte /health.capabilities. paperWidth 80 (48 col) ou 58 (32 col). " +
+        "Encoding padrao cp860 (acentos PT). O formato { text: [...] } continua valido.",
+      tiposSuportados: [
+        "text { value, align, bold, underline, size }",
+        "divider { style: solid|dashed|dotted, char? }",
+        "kv { left, right, bold, size }",
+        "table { header[], rows[][], widths? }",
+        "qr { data, size, errorCorrection, align }",
+        "feed { lines }",
+        "cut { mode: full|partial }",
+        "drawer"
+      ],
+      exemplo: {
+        paperWidth: 80,
+        cut: true,
+        blocks: [
+          { type: "text", value: "FORTUNATO BEBIDAS", align: "center", bold: true, size: "large" },
+          { type: "divider", style: "solid" },
+          { type: "kv", left: "TOTAL:", right: "R$ 61,99", bold: true },
+          { type: "qr", data: "uuid-do-pedido", size: 8, align: "center" }
+        ]
+      }
+    },
     qrcode: {
       comoUsar:
         "Para imprimir QR (ex.: PIX copia-e-cola), use uma das opcoes abaixo. " +

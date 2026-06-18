@@ -7,10 +7,22 @@ const MAX_ENTRIES = 200;
 let entries = [];
 let listener = null;
 
-/** Remove bytes de controle ESC/POS para exibir o texto de forma legível. */
+/** Extrai linhas legíveis do payload (formato blocks ou text) para exibir. */
 function cleanLines(payload) {
-  const text = Array.isArray(payload?.text) ? payload.text : [];
-  return text
+  let raw = [];
+  if (Array.isArray(payload?.blocks)) {
+    for (const b of payload.blocks) {
+      if (!b || typeof b !== "object") continue;
+      if (typeof b.value === "string") raw.push(b.value);
+      else if (b.left != null || b.right != null)
+        raw.push(`${b.left || ""} ${b.right || ""}`);
+      else if (b.type === "qr") raw.push("[QR Code]");
+      else if (b.type === "table") raw.push("[itens]");
+    }
+  } else if (Array.isArray(payload?.text)) {
+    raw = payload.text;
+  }
+  return raw
     .map((l) => String(l).replace(/[\x00-\x1f]/g, "").trim())
     .filter((l) => l.length > 0);
 }

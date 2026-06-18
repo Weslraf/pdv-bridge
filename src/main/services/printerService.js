@@ -2,94 +2,7 @@ const { execFile } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 const os = require("os");
-
-// ----- Comandos ESC/POS -----
-const ESC = "\x1B";
-const GS = "\x1D";
-const INIT = ESC + "@";                  // reseta a impressora
-const CUT_FULL = GS + "V" + "\x00";       // corte total (GS V 0) - padrao moderno
-const ALIGN_CENTER = ESC + "a" + "\x01";  // centraliza
-const ALIGN_LEFT = ESC + "a" + "\x00";    // alinha a esquerda
-// alternativa de corte para impressoras antigas: ESC + "i"
-
-// Token em linha de texto que vira um QR Code: {{qr:DADOS}}
-const QR_TOKEN = /^\s*\{\{qr:([\s\S]*?)\}\}\s*$/i;
-
-// Mapa de correcao de erro do QR (ESC/POS): L, M, Q, H.
-const QR_EC = { L: 48, M: 49, Q: 50, H: 51 };
-
-/**
- * Gera os comandos ESC/POS de um QR Code nativo (GS ( k, modelo 2).
- * Suportado por impressoras ESC/POS modernas, incluindo a Bematech MP-4200.
- * @param {string} data conteudo do QR (ex.: copia-e-cola PIX, URL).
- * @param {{ size?: number, ec?: string }} opts
- */
-function buildQrCode(data, opts = {}) {
-  const payload = Buffer.from(String(data), "latin1");
-  const storeLen = payload.length + 3;
-  const pL = storeLen & 0xff;
-  const pH = (storeLen >> 8) & 0xff;
-  const size = Math.min(16, Math.max(1, parseInt(opts.size, 10) || 6));
-  const ec = QR_EC[String(opts.ec || "M").toUpperCase()] || QR_EC.M;
-
-  return Buffer.concat([
-    Buffer.from([0x1d, 0x28, 0x6b, 0x04, 0x00, 0x31, 0x41, 0x32, 0x00]), // modelo 2
-    Buffer.from([0x1d, 0x28, 0x6b, 0x03, 0x00, 0x31, 0x43, size]),       // tamanho do modulo
-    Buffer.from([0x1d, 0x28, 0x6b, 0x03, 0x00, 0x31, 0x45, ec]),         // correcao de erro
-    Buffer.from([0x1d, 0x28, 0x6b, pL, pH, 0x31, 0x50, 0x30]),           // armazena dados
-    payload,
-    Buffer.from([0x1d, 0x28, 0x6b, 0x03, 0x00, 0x31, 0x51, 0x30])        // imprime
-  ]);
-}
-
-/** Emite um QR centralizado e volta o alinhamento para a esquerda. */
-function centeredQr(data, opts) {
-  return Buffer.concat([
-    Buffer.from(ALIGN_CENTER, "latin1"),
-    buildQrCode(data, opts),
-    Buffer.from("\r\n" + ALIGN_LEFT, "latin1")
-  ]);
-}
-
-/**
- * Monta o buffer ESC/POS do cupom.
- * Compativel com o formato antigo { text: string[], cut }. Alem disso:
- *  - qualquer linha no formato {{qr:DADOS}} vira um QR Code centralizado;
- *  - o campo opcional qrcode (string ou { data, size, ec }) imprime um QR no rodape.
- * size/ec padrao podem vir em payload.qr = { size, ec }.
- * Usamos latin1 para preservar 1 byte por caractere (inclui bytes de controle).
- */
-function buildEscPosBuffer(payload = {}) {
-  const { text = [], cut = true, qr = {}, qrcode } = payload;
-  const defSize = qr.size || 6;
-  const defEc = qr.ec || "M";
-
-  const parts = [Buffer.from(INIT, "latin1")];
-
-  for (const raw of text) {
-    const line = String(raw);
-    const match = line.match(QR_TOKEN);
-    if (match) {
-      parts.push(centeredQr(match[1], { size: defSize, ec: defEc }));
-    } else {
-      parts.push(Buffer.from(line + "\r\n", "latin1"));
-    }
-  }
-
-  const tail = typeof qrcode === "string" ? { data: qrcode } : qrcode;
-  if (tail && tail.data) {
-    parts.push(
-      centeredQr(tail.data, {
-        size: tail.size || defSize,
-        ec: tail.ec || defEc
-      })
-    );
-  }
-
-  parts.push(Buffer.from("\r\n\r\n", "latin1"));
-  if (cut) parts.push(Buffer.from(CUT_FULL, "latin1"));
-  return Buffer.concat(parts);
-}
+const { buildDocument } = require("./escpos");
 
 /**
  * Escapa um valor para ser embutido com seguranca dentro de aspas simples
@@ -257,7 +170,7 @@ async function printEscPos(printerName, payload = {}) {
   if (!printerName) {
     throw new Error("Nome da impressora vazio.");
   }
-  const buffer = buildEscPosBuffer(payload);
+  const buffer = buildDocument(payload);
   return rawPrint(printerName, buffer);
 }
 
@@ -287,4 +200,4 @@ async function getPrinters() {
   });
 }
 
-module.exports = { printEscPos, getPrinters, buildEscPosBuffer };
+module.exports = { printEscPos, getPrinters };

@@ -4,9 +4,14 @@ const { SERVER_PORT, APP_VERSION } = require("../config");
 const { printEscPos } = require("../services/printerService");
 const { buildClientHints } = require("../services/clientHints");
 const printHistory = require("../services/printHistory");
+const { CAPABILITIES } = require("../services/escpos");
 const {
   getSelectedPrinterName,
-  setSelectedPrinterName
+  setSelectedPrinterName,
+  getPaperWidth,
+  setPaperWidth,
+  getEncoding,
+  setEncoding
 } = require("../services/settingsService");
 
 /** CORS permissivo: so escuta em loopback (127.0.0.1 e ::1). */
@@ -57,7 +62,11 @@ function buildApp({ getPrinters, onPrintRequest }) {
       service: "pdv-bridge",
       product: "Uno Print",
       version: APP_VERSION,
-      port: SERVER_PORT
+      port: SERVER_PORT,
+      printer: getSelectedPrinterName() || null,
+      paperWidth: getPaperWidth(),
+      encoding: getEncoding(),
+      capabilities: CAPABILITIES
     });
   });
 
@@ -74,44 +83,54 @@ function buildApp({ getPrinters, onPrintRequest }) {
     });
   });
 
-  app.post("/print", async (req, res) => {
-    try {
-      const body = req.body || {};
-      const selectedPrinterName =
-        body.printerName || getSelectedPrinterName() || "";
+  // Aceita tanto o formato estruturado { blocks: [...] } quanto o antigo
+  // { text: [...] }. Aplica os padroes de largura/encoding configurados.
+  async function handlePrint(req, res) {
+    const body = req.body || {};
+    const selectedPrinterName =
+      body.printerName || getSelectedPrinterName() || "";
 
-      if (!selectedPrinterName) {
-        printHistory.add({
-          source: "http",
-          payload: body,
-          status: "error",
-          error: "Nenhuma impressora selecionada."
-        });
-        return res.status(400).json({
-          ok: false,
-          error: "Nenhuma impressora selecionada."
-        });
-      }
-
-      await printEscPos(selectedPrinterName, body);
+    if (!selectedPrinterName) {
       printHistory.add({
         source: "http",
         payload: body,
+        status: "error",
+        error: "Nenhuma impressora selecionada."
+      });
+      return res.status(400).json({
+        ok: false,
+        error: "Nenhuma impressora selecionada."
+      });
+    }
+
+    const payload = {
+      ...body,
+      paperWidth: body.paperWidth || getPaperWidth(),
+      encoding: body.encoding || getEncoding()
+    };
+
+    const startedAt = Date.now();
+    try {
+      await printEscPos(selectedPrinterName, payload);
+      printHistory.add({
+        source: "http",
+        payload,
         status: "ok",
         printerName: selectedPrinterName
       });
-      onPrintRequest?.(body);
+      onPrintRequest?.(payload);
 
       return res.json({
         ok: true,
-        printerName: selectedPrinterName
+        printerName: selectedPrinterName,
+        elapsedMs: Date.now() - startedAt
       });
     } catch (error) {
       printHistory.add({
         source: "http",
-        payload: req.body || {},
+        payload,
         status: "error",
-        printerName: getSelectedPrinterName() || "",
+        printerName: selectedPrinterName,
         error: error.message
       });
       return res.status(500).json({
@@ -119,7 +138,10 @@ function buildApp({ getPrinters, onPrintRequest }) {
         error: error.message
       });
     }
-  });
+  }
+
+  app.post("/print", handlePrint);
+  app.post("/print-text", handlePrint); // compat: nome alternativo do mesmo endpoint
 
   app.post("/config/printer", (req, res) => {
     const { printerName } = req.body || {};
@@ -132,6 +154,21 @@ function buildApp({ getPrinters, onPrintRequest }) {
 
     setSelectedPrinterName(printerName);
     return res.json({ ok: true, printerName });
+  });
+
+  // Config geral: impressora, largura do papel (58/80) e encoding.
+  app.post("/config", (req, res) => {
+    const { printer, printerName, paperWidth, encoding } = req.body || {};
+    const printerToSet = printer || printerName;
+    if (printerToSet) setSelectedPrinterName(printerToSet);
+    if (paperWidth) setPaperWidth(paperWidth);
+    if (encoding) setEncoding(encoding);
+    return res.json({
+      ok: true,
+      printer: getSelectedPrinterName() || null,
+      paperWidth: getPaperWidth(),
+      encoding: getEncoding()
+    });
   });
 
   return app;
