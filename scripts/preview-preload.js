@@ -17,6 +17,8 @@ contextBridge.exposeInMainWorld("bridgeApi", {
   setSelectedPrinter: async () => ({ ok: true }),
   getStartWithWindows: async () => true,
   setStartWithWindows: async () => ({ ok: true }),
+  getPrintMode: async () => "image",
+  setPrintMode: async (m) => ({ ok: true, mode: m }),
   getAppInfo: async () => ({ name: "Uno Print", version: "0.2.0", port: 8181, baseUrl: "http://localhost:8181" }),
   openExternal: async () => ({ ok: true }),
   copyText: async () => ({ ok: true }),

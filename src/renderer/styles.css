@@ -715,6 +715,22 @@ body {
   color: var(--text-soft);
 }
 
+.toggle--stacked {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(120, 230, 180, 0.1);
+  align-items: flex-start;
+}
+
+.toggle-hint {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.72rem;
+  font-weight: 400;
+  color: var(--text-dim);
+  line-height: 1.3;
+}
+
 /* ---------- Status / detalhes ---------- */
 .status-line {
   margin: 0 2px;

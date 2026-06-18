@@ -27,7 +27,10 @@ const {
   getSelectedPrinterName,
   setSelectedPrinterName,
   getStartWithWindows,
-  setStartWithWindows
+  setStartWithWindows,
+  getPaperWidth,
+  getPrintMode,
+  setPrintMode
 } = require("./services/settingsService");
 
 let mainWindow = null;
@@ -36,6 +39,10 @@ let httpServer = null;
 const socketGateway = createSocketGateway();
 
 app.setAppUserModelId(APP_USER_MODEL_ID);
+
+// Necessario para a renderizacao offscreen do cupom (modo imagem): com a GPU
+// ativa o capturePage offscreen falha (UnknownVizError) em varias maquinas.
+app.disableHardwareAcceleration();
 
 async function getInstalledPrinters() {
   if (!mainWindow) return [];
@@ -195,14 +202,20 @@ function setupIpc() {
       return { ok: false, error: "Selecione e salve uma impressora primeiro." };
     }
     const payload = {
-      text: [
-        "Uno Print",
-        "Teste de impressao",
-        new Date().toLocaleString("pt-BR"),
-        "----------------",
-        "OK"
-      ],
-      cut: true
+      paperWidth: getPaperWidth(),
+      mode: getPrintMode(),
+      cut: true,
+      blocks: [
+        { type: "text", value: "Uno Print", align: "center", bold: true, size: "large" },
+        { type: "text", value: "Teste de impressão", align: "center" },
+        { type: "divider", style: "dashed" },
+        { type: "text", value: "Acentuação: ÁÉÍÓÚ ÃÕ Ç ê â ô" },
+        { type: "kv", left: "Data:", right: new Date().toLocaleString("pt-BR") },
+        { type: "kv", left: "Status:", right: "OK", bold: true },
+        { type: "qr", data: "https://app.unotecx.com/uno-print/teste", size: 6, align: "center" },
+        { type: "text", value: "Se você lê isto e o QR escaneia, está tudo certo!", align: "center", size: "small" },
+        { type: "feed", lines: 2 }
+      ]
     };
     try {
       await printEscPos(name, payload);
@@ -223,6 +236,12 @@ function setupIpc() {
       });
       return { ok: false, error: e.message };
     }
+  });
+
+  ipcMain.handle("printmode:get", () => getPrintMode());
+  ipcMain.handle("printmode:set", (_event, mode) => {
+    setPrintMode(mode);
+    return { ok: true, mode: getPrintMode() };
   });
 
   ipcMain.handle("history:list", () => ({

@@ -10,7 +10,8 @@ try {
       selectedPrinterName: "",
       startWithWindows: true,
       paperWidth: 80,
-      encoding: "cp860"
+      encoding: "cp860",
+      printMode: "image"
     }
   });
 } catch (e) {
@@ -19,7 +20,8 @@ try {
     selectedPrinterName: "",
     startWithWindows: true,
     paperWidth: 80,
-    encoding: "cp860"
+    encoding: "cp860",
+    printMode: "image"
   };
   store = {
     get: (key) => data[key],
@@ -52,6 +54,12 @@ function getEncoding() {
 function setEncoding(encoding) {
   store.set("encoding", String(encoding || "cp860"));
 }
+function getPrintMode() {
+  return store.get("printMode") === "text" ? "text" : "image";
+}
+function setPrintMode(mode) {
+  store.set("printMode", mode === "text" ? "text" : "image");
+}
 
 module.exports = {
   getSelectedPrinterName,
@@ -61,5 +69,7 @@ module.exports = {
   getPaperWidth,
   setPaperWidth,
   getEncoding,
-  setEncoding
+  setEncoding,
+  getPrintMode,
+  setPrintMode
 };

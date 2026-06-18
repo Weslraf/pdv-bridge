@@ -11,7 +11,9 @@ const {
   getPaperWidth,
   setPaperWidth,
   getEncoding,
-  setEncoding
+  setEncoding,
+  getPrintMode,
+  setPrintMode
 } = require("../services/settingsService");
 
 /** CORS permissivo: so escuta em loopback (127.0.0.1 e ::1). */
@@ -66,6 +68,7 @@ function buildApp({ getPrinters, onPrintRequest }) {
       printer: getSelectedPrinterName() || null,
       paperWidth: getPaperWidth(),
       encoding: getEncoding(),
+      printMode: getPrintMode(),
       capabilities: CAPABILITIES
     });
   });
@@ -106,7 +109,8 @@ function buildApp({ getPrinters, onPrintRequest }) {
     const payload = {
       ...body,
       paperWidth: body.paperWidth || getPaperWidth(),
-      encoding: body.encoding || getEncoding()
+      encoding: body.encoding || getEncoding(),
+      mode: body.mode || getPrintMode()
     };
 
     const startedAt = Date.now();
@@ -158,16 +162,18 @@ function buildApp({ getPrinters, onPrintRequest }) {
 
   // Config geral: impressora, largura do papel (58/80) e encoding.
   app.post("/config", (req, res) => {
-    const { printer, printerName, paperWidth, encoding } = req.body || {};
+    const { printer, printerName, paperWidth, encoding, mode } = req.body || {};
     const printerToSet = printer || printerName;
     if (printerToSet) setSelectedPrinterName(printerToSet);
     if (paperWidth) setPaperWidth(paperWidth);
     if (encoding) setEncoding(encoding);
+    if (mode) setPrintMode(mode);
     return res.json({
       ok: true,
       printer: getSelectedPrinterName() || null,
       paperWidth: getPaperWidth(),
-      encoding: getEncoding()
+      encoding: getEncoding(),
+      printMode: getPrintMode()
     });
   });
 

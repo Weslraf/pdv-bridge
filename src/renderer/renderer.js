@@ -4,6 +4,7 @@ const testPrintBtn = document.getElementById("testPrintBtn");
 const savedState = document.getElementById("savedState");
 const setupBanner = document.getElementById("setupBanner");
 const startupToggle = document.getElementById("startupToggle");
+const imageModeToggle = document.getElementById("imageModeToggle");
 const statusText = document.getElementById("statusText");
 const versionBadge = document.getElementById("versionBadge");
 const baseUrlDisplay = document.getElementById("baseUrlDisplay");
@@ -144,6 +145,11 @@ async function loadStartupPreference() {
   startupToggle.checked = Boolean(enabled);
 }
 
+async function loadPrintMode() {
+  const mode = await window.bridgeApi.getPrintMode();
+  imageModeToggle.checked = mode !== "text";
+}
+
 /* ---------- Histórico ---------- */
 function fmtTime(iso) {
   const d = new Date(iso);
@@ -276,6 +282,16 @@ startupToggle.addEventListener("change", async (event) => {
   );
 });
 
+imageModeToggle.addEventListener("change", async (event) => {
+  const mode = event.target.checked ? "image" : "text";
+  await window.bridgeApi.setPrintMode(mode);
+  setStatus(
+    mode === "image"
+      ? "Impressão fiel (imagem) ativada."
+      : "Impressão em modo texto (ESC/POS) ativada."
+  );
+});
+
 copyBaseBtn.addEventListener("click", async () => {
   await window.bridgeApi.copyText(baseUrl);
   setStatus("URL copiada para a área de transferência.");
@@ -329,7 +345,12 @@ window.bridgeApi.onHistoryAdded((entry) => {
 /* ---------- Init ---------- */
 (async function init() {
   await loadAppInfo();
-  await Promise.all([loadPrinters(), loadStartupPreference(), loadHistory()]);
+  await Promise.all([
+    loadPrinters(),
+    loadStartupPreference(),
+    loadPrintMode(),
+    loadHistory()
+  ]);
   await pingHealth();
   setInterval(pingHealth, 8000);
   setStatus("Pronto.");

@@ -3,6 +3,7 @@ const fs = require("fs");
 const path = require("path");
 const os = require("os");
 const { buildDocument } = require("./escpos");
+const { buildReceiptHtml } = require("./htmlBuilder");
 
 /**
  * Escapa um valor para ser embutido com seguranca dentro de aspas simples
@@ -170,7 +171,22 @@ async function printEscPos(printerName, payload = {}) {
   if (!printerName) {
     throw new Error("Nome da impressora vazio.");
   }
-  const buffer = buildDocument(payload);
+
+  // Modo imagem (padrao): renderiza o cupom como imagem no Chromium e envia
+  // como raster ESC/POS -> identico ao HTML, acentos/QR sempre corretos.
+  // Modo texto: ESC/POS tradicional (mais rapido, depende de codepage).
+  const mode = String(payload.mode || "image").toLowerCase();
+
+  let buffer;
+  if (mode === "text") {
+    buffer = buildDocument(payload);
+  } else {
+    // require tardio: imageRenderer usa BrowserWindow (so disponivel no main).
+    const { buildImageDocument } = require("./imageRenderer");
+    const html = buildReceiptHtml(payload);
+    buffer = await buildImageDocument(payload, html);
+  }
+
   return rawPrint(printerName, buffer);
 }
 

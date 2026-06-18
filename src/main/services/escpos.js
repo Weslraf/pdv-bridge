@@ -345,6 +345,9 @@ function buildDocument(payload = {}) {
   return Buffer.concat(parts);
 }
 
-const CAPABILITIES = ["text", "blocks", "qr", "kv", "table", "divider", "feed", "cut", "drawer"];
+const CAPABILITIES = [
+  "text", "blocks", "html", "image",
+  "qr", "kv", "table", "divider", "feed", "cut", "drawer"
+];
 
 module.exports = { buildDocument, buildQrCode, colsForWidth, CAPABILITIES };

@@ -7,6 +7,8 @@ contextBridge.exposeInMainWorld("bridgeApi", {
     ipcRenderer.invoke("printer:selected:set", printerName),
   getStartWithWindows: () => ipcRenderer.invoke("startup:get"),
   setStartWithWindows: (enabled) => ipcRenderer.invoke("startup:set", enabled),
+  getPrintMode: () => ipcRenderer.invoke("printmode:get"),
+  setPrintMode: (mode) => ipcRenderer.invoke("printmode:set", mode),
   getAppInfo: () => ipcRenderer.invoke("app:getInfo"),
   openExternal: (url) => ipcRenderer.invoke("shell:openExternal", url),
   copyText: (text) => ipcRenderer.invoke("clipboard:writeText", text),
